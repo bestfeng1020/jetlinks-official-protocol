@@ -10,7 +10,6 @@ import org.jetlinks.core.message.function.FunctionInvokeMessageReply;
 import org.jetlinks.core.message.property.*;
 import org.junit.Assert;
 import org.junit.Test;
-import reactor.test.StepVerifier;
 
 import java.util.Collections;
 
@@ -27,11 +26,14 @@ public class BinaryMessageTypeTest {
         ByteBuf byteBuf = BinaryMessageType.write(message, Unpooled.buffer());
 
         System.out.println(ByteBufUtil.prettyHexDump(byteBuf));
+        ByteBuf buf = Unpooled
+                .buffer()
+                .writeInt(byteBuf.readableBytes())
+                .writeBytes(byteBuf);
 
-        System.out.println(ByteBufUtil.prettyHexDump(Unpooled
-                                                             .buffer()
-                                                             .writeInt(byteBuf.readableBytes())
-                                                             .writeBytes(byteBuf)));
+        System.out.println(ByteBufUtil.prettyHexDump(buf));
+        //登录报文
+        System.out.println(ByteBufUtil.hexDump(buf));
     }
 
     @Test
@@ -97,20 +99,20 @@ public class BinaryMessageTypeTest {
 
         ByteBuf data = BinaryMessageType.write(message, Unpooled.buffer());
 
-        System.out.println("TCP报文: "+ByteBufUtil.hexDump(Unpooled
-                                                   .buffer()
-                                                   .writeInt(data.readableBytes())
-                                                   .writeBytes(data.duplicate())));
-
-        System.out.println(ByteBufUtil.prettyHexDump(data));
-
-        DeviceMessage read = BinaryMessageType.read(data);
+//        System.out.println(ByteBufUtil.prettyHexDump(data));
+        ByteBuf buf = Unpooled.buffer()
+                                    .writeInt(data.readableBytes())
+                                    .writeBytes(data);
+        System.out.println(ByteBufUtil.prettyHexDump(buf));
+        System.out.println(ByteBufUtil.hexDump(buf));
+        //将长度字节读取后，直接解析报文正文
+        buf.readInt();
+        DeviceMessage read = BinaryMessageType.read(buf);
         if (null != read.getHeaders()) {
             read.getHeaders().forEach(message::addHeader);
         }
-        System.out.println(read);
-        //tcp时 发送的完整报文.
 
+        System.out.println(read);
         Assert.assertEquals(read.toString(), message.toString());
     }
 
